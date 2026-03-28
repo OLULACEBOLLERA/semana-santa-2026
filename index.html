@@ -1483,11 +1483,19 @@ async function enviarPosicion(lat, lng, acc) {
   const id = getMyId();
   const data = { lat, lng, acc, ts: Date.now() };
   try {
-    await fetch(FIREBASE_URL + '/colaboradores/' + id + '.json', {
+    const resp = await fetch(FIREBASE_URL + '/colaboradores/' + id + '.json', {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-  } catch(e) { console.warn('Firebase error:', e); }
+    if (resp.ok) {
+      updateStatus('✅ Compartiendo ubicación (±' + acc + 'm) · Enviando a Firebase...', true);
+    } else {
+      updateStatus('⚠️ GPS ok pero error Firebase: ' + resp.status + ' - revisa las reglas', true);
+    }
+  } catch(e) {
+    updateStatus('⚠️ Error de conexión Firebase: ' + e.message, true);
+  }
 }
 
 // Borrar mi posición de Firebase
