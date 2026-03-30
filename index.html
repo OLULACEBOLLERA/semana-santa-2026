@@ -2211,19 +2211,34 @@ var RUTAS_PROCESIONES = {
 var mapasIniciados = {};
 
 function initMapaEnTarjeta(id, ruta) {
-  if (mapasIniciados[id]) return;
-  mapasIniciados[id] = true;
+  if (mapasIniciados[id]) {
+    // Ya iniciado, solo invalidar tamaño por si acaso
+    if (mapasIniciados[id]._map) {
+      setTimeout(function() { mapasIniciados[id]._map.invalidateSize(); }, 150);
+    }
+    return;
+  }
   setTimeout(function() {
-    var m = L.map('mapa-' + id).setView([37.35442,-2.29723], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© OpenStreetMap', maxZoom:19
-    }).addTo(m);
-    var r = RUTAS_PROCESIONES[ruta];
-    var linea = L.polyline(r.coords, {color:r.color, weight:5, opacity:0.9}).addTo(m);
-    m.fitBounds(linea.getBounds(), {padding:[16,16]});
-  }, 100);
+    try {
+      var el = document.getElementById('mapa-' + id);
+      if (!el) { console.warn('No encontrado mapa-' + id); return; }
+      var m = L.map(el).setView([37.35442,-2.29723], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© OpenStreetMap', maxZoom:19
+      }).addTo(m);
+      var r = RUTAS_PROCESIONES[ruta];
+      if (!r || !r.coords || r.coords.length === 0) {
+        console.warn('Sin coordenadas para ruta: ' + ruta);
+        return;
+      }
+      var linea = L.polyline(r.coords, {color:r.color, weight:5, opacity:0.9}).addTo(m);
+      m.fitBounds(linea.getBounds(), {padding:[16,16]});
+      mapasIniciados[id] = { _map: m };
+    } catch(e) {
+      console.error('Error iniciando mapa ' + id + ':', e);
+    }
+  }, 200);
 }
 </script>
 </body>
 </html>
-
